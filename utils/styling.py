@@ -63,6 +63,21 @@ def inject_css():
     <style>
     /* ========== CUSTOM COMPONENTS ONLY ========== */
 
+    /* Streamlit column containers — buat anaknya stretch ke tinggi yang sama.
+       Ini krusial agar .concept-card height:100% benar-benar bekerja. */
+    div[data-testid="stHorizontalBlock"] {{
+        align-items: stretch !important;
+    }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {{
+        display: flex !important;
+        flex-direction: column !important;
+    }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div {{
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }}
+
     .hero-banner {{
         background: linear-gradient(135deg, {t['accent_netflix']} 0%, {t['accent_youtube']} 50%, {t['accent_spotify']} 100%);
         padding: 2.5rem 2rem;
