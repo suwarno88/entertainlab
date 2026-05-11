@@ -202,4 +202,3 @@ MIT License — bebas digunakan, dimodifikasi, dan didistribusikan untuk tujuan 
 ## 🙏 Kredit
 
 Dibangun dengan ❤️ untuk mahasiswa PGSD BINUS University.
-Materi disusun oleh pengampu mata kuliah **Fondasi Kecerdasan Buatan**.
