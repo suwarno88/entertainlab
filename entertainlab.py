@@ -34,7 +34,6 @@ inject_css()
 # ---------- SIDEBAR NAVIGASI ----------
 with st.sidebar:
     st.markdown("# 🤖 AI Entertainment Lab")
-    st.caption("Materi PGSD — Fondasi Kecerdasan Buatan")
 
     st.markdown("---")
     st.markdown("### 📚 Navigasi")
@@ -62,13 +61,6 @@ with st.sidebar:
     theme_toggle_widget()
 
     st.markdown("---")
-    st.markdown("### 🔗 Sumber Daya")
-    st.markdown(
-        "- 📦 [Repository GitHub](https://github.com/)\n"
-        "- 📖 [Streamlit Docs](https://docs.streamlit.io)\n"
-        "- 🎓 BINUS PGSD\n"
-    )
-
     st.caption("v1.0 • 2026")
 
 
