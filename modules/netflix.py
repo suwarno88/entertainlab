@@ -207,19 +207,19 @@ def render():
     with st.expander("📖 Penjelasan Teori (Klik untuk membuka)"):
         st.markdown(
             """
-            Netflix menggunakan kombinasi beberapa algoritma untuk merekomendasikan tayangan.
-            Dua yang paling fundamental adalah:
+            Netflix memakai gabungan beberapa algoritma untuk menebak film/serial apa yang akan Anda suka.
+            Dua cara paling penting:
 
-            **1. Collaborative Filtering (CF)** — Mencari pengguna lain yang seleranya mirip
-            dengan Anda. Jika tetangga-tetangga Anda menyukai sebuah film tetapi Anda belum
-            menontonnya, kemungkinan besar Anda juga akan menyukainya.
+            **1. Collaborative Filtering (CF) — "Cari Teman Selera"**
+            Sistem mencari pengguna lain yang seleranya mirip dengan Anda. Kalau teman-teman "selera"
+            Anda suka film tertentu yang belum Anda tonton, kemungkinan besar Anda juga akan suka.
 
-            **2. Content-Based Filtering (CB)** — Membangun profil selera Anda berdasarkan
-            ciri film yang Anda sukai (genre, tahun, dll.), lalu mencari film lain dengan
-            ciri serupa.
+            **2. Content-Based (CB) — "Cari Film Mirip"**
+            Sistem melihat ciri-ciri film yang sudah Anda sukai (genre, tahun, dll), lalu mencari film
+            lain dengan ciri yang serupa.
 
-            **3. Hybrid** — Menggabungkan kedua skor di atas dengan bobot tertentu untuk
-            mendapatkan rekomendasi yang lebih robust.
+            **3. Hybrid — "Gabungkan Keduanya"**
+            Skor dari kedua cara di atas digabungkan dengan bobot tertentu agar saling melengkapi.
             """
         )
 
@@ -232,6 +232,59 @@ def render():
     # ----- DATA -----
     rating_matrix, movies_df, profiles = build_user_item_matrix()
     user_names = rating_matrix.index.tolist()
+
+    # ----- TAMPILKAN SEMUA DATA -----
+    st.markdown("### 📚 Data yang Digunakan dalam Simulasi")
+    st.caption(
+        f"Simulasi ini memakai **{len(movies_df)} judul film/serial** dan "
+        f"**{len(user_names)} pengguna fiktif** dengan selera berbeda-beda. "
+        "Di bawah ini Anda bisa melihat data mentahnya."
+    )
+
+    tab_film, tab_user, tab_rating = st.tabs([
+        f"🎬 Katalog Film ({len(movies_df)})",
+        f"👥 Profil Pengguna ({len(user_names)})",
+        "⭐ Tabel Rating",
+    ])
+
+    with tab_film:
+        st.caption("Setiap film punya dua genre dan satu skor popularitas (semakin besar, semakin populer).")
+        df_film = movies_df[["judul", "genre_primer", "genre_sekunder", "tahun",
+                             "rating", "popularitas"]].copy()
+        df_film.columns = ["Judul", "Genre Utama", "Genre Kedua", "Tahun Rilis",
+                           "Rating Rerata", "Popularitas (0–100)"]
+        st.dataframe(
+            df_film,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Tahun Rilis":          st.column_config.NumberColumn(format="%d"),
+                "Rating Rerata":        st.column_config.NumberColumn(format="%.1f"),
+                "Popularitas (0–100)":  st.column_config.NumberColumn(format="%d"),
+            },
+        )
+
+    with tab_user:
+        st.caption("Setiap pengguna punya 2 genre favorit. Algoritma rekomendasi akan menggunakan "
+                   "kemiripan selera antar pengguna untuk memprediksi film mana yang akan mereka sukai.")
+        df_user = pd.DataFrame([
+            {"Nama Pengguna": p["name"],
+             "Genre Favorit": ", ".join(p["fav_genres"])}
+            for p in profiles
+        ])
+        st.dataframe(df_user, use_container_width=True, hide_index=True)
+
+    with tab_rating:
+        st.caption(
+            "Tabel ini menunjukkan rating yang diberikan setiap pengguna untuk setiap film "
+            "(skala 1–5). Angka **0** berarti pengguna belum menonton film tersebut — "
+            "inilah yang akan diprediksi oleh sistem rekomendasi."
+        )
+        # rating_matrix sudah berbentuk DataFrame dengan user di baris, film di kolom
+        df_rating = rating_matrix.reset_index().rename(columns={"index": "Pengguna"})
+        st.dataframe(df_rating, use_container_width=True, hide_index=True, height=320)
+
+    st.markdown("---")
 
     # ----- KONTROL -----
     st.markdown("### 🎛️ Kontrol Simulasi")
@@ -356,11 +409,16 @@ def render():
         with st.expander("📊 Lihat detail skor hybrid"):
             df_show = joined.head(10)[["judul", "cf_n", "cb_n", "skor_hybrid"]].copy()
             df_show.columns = ["Judul", "Skor CF (norm)", "Skor CB (norm)", "Skor Hybrid"]
-            st.dataframe(df_show.style.format({
-                "Skor CF (norm)": "{:.3f}",
-                "Skor CB (norm)": "{:.3f}",
-                "Skor Hybrid": "{:.3f}",
-            }), use_container_width=True, hide_index=True)
+            st.dataframe(
+                df_show,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Skor CF (norm)": st.column_config.NumberColumn(format="%.3f"),
+                    "Skor CB (norm)": st.column_config.NumberColumn(format="%.3f"),
+                    "Skor Hybrid":    st.column_config.NumberColumn(format="%.3f"),
+                },
+            )
 
     # ----- INSIGHT -----
     st.markdown("---")
