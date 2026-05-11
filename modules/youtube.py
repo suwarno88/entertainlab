@@ -160,23 +160,25 @@ def render():
     with st.expander("📖 Penjelasan Teori (Klik untuk membuka)"):
         st.markdown(
             """
-            YouTube menggunakan **pipeline dua tahap** untuk merekomendasikan video:
+            YouTube memilih video untuk Anda lewat **dua tahap penyaringan**:
 
-            **Tahap 1 — Candidate Generation:** Dari miliaran video di YouTube, filter cepat ke
-            sekitar 100–500 video yang *mungkin* relevan untuk pengguna. Filter ini menggunakan
-            kategori minat, riwayat tontonan, dan sinyal popularitas.
+            **Tahap 1 — Pemilihan Kandidat (Candidate Generation)**
+            Dari miliaran video yang ada, YouTube menyaring cepat menjadi sekitar 100–500 video
+            yang *mungkin* cocok untuk Anda. Penyaringan ini berdasarkan: kategori yang Anda minati,
+            riwayat tontonan, dan video apa yang sedang populer.
 
-            **Tahap 2 — Ranking:** Dari ~100 kandidat tersebut, hitung skor relevansi yang lebih
-            mendalam menggunakan banyak sinyal:
+            **Tahap 2 — Perangkingan (Ranking)**
+            Dari ~100 kandidat tadi, dihitung skor kecocokan menggunakan beberapa sinyal:
 
-            - **Watch Completion Rate** — berapa persen rata-rata pengguna menyelesaikan video
-            - **Click-Through Rate (CTR)** — berapa persen yang klik dari thumbnail
-            - **Like Ratio** — rasio like terhadap total reaksi
-            - **Freshness** — seberapa baru video tersebut diunggah
-            - **Popularity** — jumlah views
+            - **Watch Completion** = Berapa persen rata-rata orang menyelesaikan video sampai habis
+            - **CTR (Click-Through Rate)** = Berapa persen orang yang melihat thumbnail lalu klik
+            - **Like Ratio** = Berapa persen yang menekan tombol like dari semua yang berinteraksi
+            - **Freshness** = Seberapa baru video tersebut (yang baru biasanya lebih diprioritaskan)
+            - **Popularity** = Jumlah penonton total
 
-            Setiap sinyal diberi bobot. Skor akhir = jumlah tertimbang dari semua sinyal.
-            Video dengan skor tertinggi muncul di beranda Anda.
+            Setiap sinyal diberi **bobot** (seberapa penting sinyal itu). Skor akhir adalah hasil
+            penjumlahan dari semua sinyal yang sudah dikalikan bobotnya. Video dengan skor tertinggi
+            akan muncul di halaman beranda Anda.
             """
         )
 
@@ -190,11 +192,53 @@ def render():
         "rekomendasi berubah berdasarkan apa yang Anda anggap penting!"
     )
 
-    # ----- KONTROL -----
-    st.markdown("### 🎛️ Kontrol Simulasi")
-
+    # ----- DATA -----
     videos_df = build_videos_df()
     all_categories = sorted(videos_df["kategori"].unique().tolist())
+
+    # ----- TAMPILKAN SEMUA DATA -----
+    st.markdown("### 📚 Data Video yang Digunakan dalam Simulasi")
+    st.caption(
+        f"Simulasi ini menggunakan **{len(videos_df)} video sintetis** dari "
+        f"**{len(all_categories)} kategori**. Berikut katalog lengkapnya. Semua angka di sini "
+        "adalah versi sederhana dari sinyal yang sungguhan dipakai YouTube."
+    )
+
+    with st.expander(f"📋 Buka katalog lengkap ({len(videos_df)} video)", expanded=False):
+        df_full = videos_df[["judul", "kategori", "durasi_menit", "views_juta",
+                             "like_ratio", "ctr", "watch_completion", "freshness_hari"]].copy()
+        # Konversi rasio ke persen untuk kemudahan baca
+        df_full["like_ratio"] = df_full["like_ratio"] * 100
+        df_full["ctr"] = df_full["ctr"] * 100
+        df_full["watch_completion"] = df_full["watch_completion"] * 100
+        df_full.columns = ["Judul Video", "Kategori", "Durasi (menit)", "Views (juta)",
+                           "Like %", "CTR %", "Watch Selesai %", "Umur (hari)"]
+        st.dataframe(
+            df_full,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Durasi (menit)":   st.column_config.NumberColumn(format="%d"),
+                "Views (juta)":     st.column_config.NumberColumn(format="%.1f"),
+                "Like %":           st.column_config.NumberColumn(format="%.0f%%"),
+                "CTR %":            st.column_config.NumberColumn(format="%.1f%%"),
+                "Watch Selesai %":  st.column_config.NumberColumn(format="%.0f%%"),
+                "Umur (hari)":      st.column_config.NumberColumn(format="%d"),
+            },
+        )
+        st.caption(
+            "**Penjelasan kolom:** "
+            "**Views** = berapa juta orang sudah menonton • "
+            "**Like %** = berapa persen pengguna menekan tombol like dari semua yang berinteraksi • "
+            "**CTR %** = berapa persen orang yang klik video saat melihat thumbnail • "
+            "**Watch Selesai %** = rata-rata berapa persen durasi video yang ditonton sampai habis • "
+            "**Umur (hari)** = berapa hari lalu video ini diunggah."
+        )
+
+    st.markdown("---")
+
+    # ----- KONTROL -----
+    st.markdown("### 🎛️ Kontrol Simulasi")
 
     col_l, col_r = st.columns([1, 1.2], gap="large")
 
@@ -311,22 +355,28 @@ def render():
         config={"displayModeBar": False},
     )
 
-    # Tabel lengkap
+    # Tabel lengkap Top-10
     with st.expander("📊 Lihat tabel detail Top-10 rekomendasi"):
         df_show = top[["judul", "kategori", "ranking_score", "watch_completion",
                        "ctr", "like_ratio", "freshness_hari", "views_juta"]].head(10).copy()
-        df_show.columns = ["Judul", "Kategori", "Skor Akhir", "Watch %", "CTR",
-                           "Like Ratio", "Umur (hari)", "Views (jt)"]
+        # Konversi rasio (0-1) ke persen (0-100) untuk kolom yang ditampilkan sebagai %
+        df_show["watch_completion"] = df_show["watch_completion"] * 100
+        df_show["ctr"] = df_show["ctr"] * 100
+        df_show["like_ratio"] = df_show["like_ratio"] * 100
+        df_show.columns = ["Judul", "Kategori", "Skor Akhir", "Watch %", "CTR %",
+                           "Like Ratio %", "Umur (hari)", "Views (jt)"]
         st.dataframe(
-            df_show.style.format({
-                "Skor Akhir": "{:.3f}",
-                "Watch %": "{:.0%}",
-                "CTR": "{:.0%}",
-                "Like Ratio": "{:.0%}",
-                "Views (jt)": "{:.1f}",
-            }).background_gradient(subset=["Skor Akhir"], cmap="Reds"),
+            df_show,
             use_container_width=True,
             hide_index=True,
+            column_config={
+                "Skor Akhir":    st.column_config.NumberColumn(format="%.3f"),
+                "Watch %":       st.column_config.NumberColumn(format="%.0f%%"),
+                "CTR %":         st.column_config.NumberColumn(format="%.1f%%"),
+                "Like Ratio %":  st.column_config.NumberColumn(format="%.0f%%"),
+                "Views (jt)":    st.column_config.NumberColumn(format="%.1f"),
+                "Umur (hari)":   st.column_config.NumberColumn(format="%d"),
+            },
         )
 
     # Bobot saat ini
