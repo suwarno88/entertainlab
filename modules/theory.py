@@ -92,17 +92,23 @@ def render():
     st.markdown("## 🔄 Alur Kerja Umum Sistem Rekomendasi")
     st.plotly_chart(_flowchart_recommendation(), use_container_width=True, config={"displayModeBar": False})
 
-    with st.expander("📝 Penjelasan setiap tahap"):
+    with st.expander("📝 Penjelasan setiap tahap (bahasa sederhana)"):
         st.markdown(
             """
-            1. **Data Pengguna** — riwayat tontonan, rating, klik, durasi menonton, like/dislike.
-            2. **Data Konten** — informasi item: genre, durasi, tahun, fitur audio/visual.
-            3. **Feature Engineering** — mengubah data mentah menjadi representasi numerik (vektor)
-               yang bisa diolah model.
-            4. **Model AI** — algoritma yang mempelajari pola: Collaborative Filtering, Content-Based,
-               Deep Neural Network, atau gabungan (Hybrid).
-            5. **Skor Relevansi** — model menghasilkan angka 0–1 untuk setiap pasangan (pengguna, item).
-            6. **Top-N Rekomendasi** — ambil N item dengan skor tertinggi untuk ditampilkan.
+            1. **Data Pengguna** — semua jejak digital Anda: film apa yang pernah ditonton,
+               video apa yang di-like, lagu apa yang sering diputar, dan sebagainya.
+            2. **Data Konten** — informasi tentang item itu sendiri: genre film, durasi video,
+               nama artis lagu, tahun rilis, dan ciri lainnya.
+            3. **Feature Engineering** (Mengolah Ciri-ciri) — mengubah data mentah (misalnya "genre: Komedi")
+               menjadi sekumpulan angka agar bisa dihitung komputer. Bayangkan seperti memberi nilai
+               raport untuk setiap film.
+            4. **Model AI** — "otak" yang mempelajari pola dari data. Ada beberapa cara: ada yang
+               membandingkan selera antar pengguna, ada yang membandingkan ciri antar item,
+               atau gabungan keduanya.
+            5. **Skor Kecocokan** — model menghasilkan angka 0–1 untuk setiap pasangan (pengguna, item).
+               Angka mendekati 1 = sangat cocok; mendekati 0 = tidak cocok.
+            6. **Daftar Rekomendasi Teratas** — ambil sejumlah item dengan skor tertinggi,
+               tampilkan di beranda Anda.
             """
         )
 
@@ -117,24 +123,27 @@ def render():
             "👥",
             "Collaborative Filtering",
             "Mencari pengguna lain yang <strong>seleranya mirip</strong> dengan Anda, "
-            "lalu merekomendasikan item yang mereka sukai tetapi belum Anda coba. "
-            "Contoh: \"Pengguna yang menonton X juga menonton Y.\" Digunakan oleh Netflix.",
+            "lalu merekomendasikan tontonan yang mereka sukai tapi belum Anda coba. "
+            "Logikanya: \"Pengguna yang menonton X juga menonton Y.\" "
+            "<br><br>Cara ini dipakai Netflix untuk menyarankan serial baru.",
         )
     with c2:
         render_concept_card(
             "🏷️",
             "Content-Based Filtering",
-            "Mencari item yang <strong>mirip dengan item</strong> yang sudah Anda sukai, "
-            "berdasarkan ciri-ciri konten (genre, kata kunci, fitur audio). "
-            "Contoh: Spotify mencari lagu dengan tempo dan energy serupa.",
+            "Mencari item lain yang <strong>mirip dengan item</strong> yang sudah Anda sukai, "
+            "berdasarkan ciri-cirinya (genre, kata kunci, suara, dll). "
+            "<br><br>Contoh: Spotify mencari lagu dengan tempo dan tingkat energi serupa dengan "
+            "lagu-lagu favorit Anda.",
         )
     with c3:
         render_concept_card(
             "🔀",
             "Hybrid (Gabungan)",
-            "Menggabungkan dua pendekatan di atas, sering ditambah <strong>deep learning</strong> "
-            "untuk menangkap pola kompleks. Digunakan YouTube dengan pipeline "
-            "<em>candidate generation</em> + <em>ranking</em>.",
+            "Menggabungkan kedua pendekatan di atas, sering ditambah teknik AI canggih "
+            "(<em>deep learning</em>) untuk menangkap pola rumit. "
+            "<br><br>YouTube menggunakan cara ini lewat dua tahap: memilih video kandidat lalu "
+            "merangking ulang berdasarkan banyak sinyal.",
         )
 
     st.markdown("---")
@@ -142,29 +151,30 @@ def render():
     # COSINE SIMILARITY
     st.markdown("## 📐 Kunci Matematis: Cosine Similarity")
     st.write(
-        "Hampir semua sistem rekomendasi modern menggunakan konsep **kemiripan vektor**. "
-        "Cara paling umum adalah **cosine similarity** — yaitu mengukur seberapa sejajar "
-        "arah dua vektor di ruang multi-dimensi."
+        "Hampir semua sistem rekomendasi modern menggunakan satu konsep matematika sederhana: "
+        "**mengukur kemiripan dua daftar angka**. Cara paling populer disebut **cosine similarity**. "
+        "Bayangkan setiap pengguna (atau item) digambarkan sebagai sebuah panah yang menunjuk ke arah "
+        "tertentu — semakin sama arahnya, semakin mirip seleranya."
     )
 
     st.markdown(
         """
         <div class="formula-block">
-        cos(θ) = (A · B) / (||A|| × ||B||)<br><br>
-        Hasil:<br>
-        &nbsp;&nbsp;<strong>+1</strong> → arah sama persis (sangat mirip)<br>
+        Hasilnya berupa angka antara −1 dan +1:<br><br>
+        &nbsp;&nbsp;<strong>+1</strong> → arah sama persis (sangat mirip ✅)<br>
         &nbsp;&nbsp;&nbsp;<strong>0</strong> → tegak lurus (tidak ada hubungan)<br>
-        &nbsp;&nbsp;<strong>−1</strong> → arah berlawanan (sangat berbeda)
+        &nbsp;&nbsp;<strong>−1</strong> → arah berlawanan (sangat berbeda ❌)
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     render_highlight(
-        "<strong>Intuisi sederhana:</strong> Bayangkan setiap pengguna direpresentasikan oleh sebuah "
-        "panah di ruang multi-dimensi (di mana setiap dimensi adalah satu item yang sudah dirating). "
-        "Dua pengguna dengan selera mirip akan memiliki panah yang menunjuk ke arah yang sama. "
-        "Cosine similarity mengukur seberapa sejajar kedua panah tersebut."
+        "<strong>Analogi sederhana:</strong> Bayangkan Anda dan teman Anda diminta menilai 10 film "
+        "dengan skala 1–5. Jika nilai-nilai Anda berdua naik-turun di film yang sama "
+        "(suka film A, tidak suka film B), maka cosine similarity Anda berdua mendekati +1 "
+        "— alias seleranya mirip. AI memanfaatkan kemiripan ini untuk menebak film apa lagi "
+        "yang mungkin Anda sukai."
     )
 
     # TANTANGAN
@@ -172,10 +182,18 @@ def render():
     st.markdown("## ⚠️ Tantangan Umum")
 
     challenges = [
-        ("🥶 Cold Start", "Bagaimana merekomendasikan untuk pengguna baru yang belum punya riwayat? Solusi: gunakan data demografis atau onboarding survey."),
-        ("📉 Sparsity",   "Kebanyakan pengguna hanya berinteraksi dengan sebagian kecil item. Matrix-nya jadi banyak kosong. Solusi: matrix factorization, deep learning."),
-        ("🔄 Filter Bubble", "Jika hanya merekomendasikan yang mirip, pengguna terjebak di selera sempit. Solusi: tambahkan faktor diversitas dan eksplorasi."),
-        ("⚡ Skalabilitas", "Netflix punya 260+ juta pengguna × jutaan item. Komputasi cosine similarity langsung tidak feasible. Solusi: approximate nearest neighbors, embedding."),
+        ("🥶 Cold Start (Pengguna Baru)",
+         "Bagaimana merekomendasikan untuk pengguna yang baru daftar dan belum punya riwayat sama sekali? "
+         "Solusinya: bertanya dulu lewat survei singkat saat onboarding, atau pakai data demografis."),
+        ("📉 Sparsity (Data Banyak yang Kosong)",
+         "Kebanyakan pengguna hanya menonton sebagian kecil dari semua film yang tersedia. Jadi tabelnya "
+         "banyak sel kosong. Solusinya: pakai teknik matematika canggih yang bisa 'menebak' angka kosong."),
+        ("🔄 Filter Bubble (Terjebak di Selera Sempit)",
+         "Kalau sistem hanya merekomendasikan film yang mirip-mirip, pengguna jadi tidak pernah "
+         "kenal genre baru. Solusinya: sengaja tambahkan variasi (eksplorasi) di rekomendasi."),
+        ("⚡ Skalabilitas (Data Sangat Besar)",
+         "Netflix punya 260+ juta pengguna dan jutaan film. Tidak mungkin menghitung kemiripan satu per satu. "
+         "Solusinya: pakai teknik pencarian cepat (approximate nearest neighbors) dan ringkasan data (embedding)."),
     ]
     for title, desc in challenges:
         st.markdown(
