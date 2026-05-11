@@ -127,19 +127,22 @@ def render():
     with st.expander("📖 Penjelasan Teori (Klik untuk membuka)"):
         st.markdown(
             """
-            Spotify menganalisis setiap lagu dan mengubahnya menjadi **vektor numerik**
-            berisi sekitar 12 *audio features* yang diekstrak oleh AI dari sinyal audio:
+            Spotify mendengarkan setiap lagu lalu mengubahnya menjadi **sekumpulan angka**
+            yang menggambarkan karakter musiknya. Ada sekitar 12 ciri (di simulasi ini kita pakai 6
+            yang paling penting):
 
-            - **Danceability** (0–1): seberapa cocok untuk berdansa
-            - **Energy** (0–1): intensitas dan kekuatan lagu
-            - **Valence** (0–1): kepositifan emosional (0 sedih, 1 ceria)
-            - **Acousticness** (0–1): seberapa akustik vs elektronik
-            - **Tempo** (BPM): ketukan per menit
-            - **Instrumentalness** (0–1): seberapa banyak instrumental vs vokal
+            - **Danceability** (skala 0–1) = seberapa cocok untuk berdansa
+            - **Energy** (0–1) = tingkat tenaga dan intensitas lagu
+            - **Valence** (0–1) = suasana hati lagu — 0 sedih, 1 ceria
+            - **Acousticness** (0–1) = seberapa akustik (1) vs elektronik (0)
+            - **Tempo** (BPM) = kecepatan ketukan per menit
+            - **Instrumentalness** (0–1) = seberapa banyak instrumental — 1 tanpa vokal, 0 penuh vokal
 
-            Lalu Spotify membangun **profil selera Anda** dari fitur lagu-lagu yang sering Anda dengar.
-            Untuk merekomendasikan, Spotify mencari lagu lain yang vektornya paling dekat dengan profil
-            Anda menggunakan **cosine similarity**.
+            Setelah semua lagu punya "raport angka" ini, Spotify melihat lagu-lagu yang sering
+            Anda dengar dan menghitung rata-ratanya menjadi **profil selera Anda**.
+            Untuk merekomendasikan lagu baru, Spotify mencari lagu yang ciri-cirinya paling mirip
+            dengan profil Anda — pakai matematika sederhana bernama **cosine similarity**
+            (mengukur kemiripan dua daftar angka).
             """
         )
 
@@ -148,6 +151,48 @@ def render():
         "Anda hari ini, lalu lihat lagu-lagu apa yang direkomendasikan dari katalog. "
         "Coba juga ubah slider <em>Eksplorasi</em> untuk menemukan lagu di luar zona nyaman!"
     )
+
+    # ----- DATA -----
+    songs_df = build_songs_df()
+    all_genres = sorted(songs_df["genre"].unique().tolist())
+
+    # ----- TAMPILKAN SEMUA DATA -----
+    st.markdown("### 📚 Data Lagu yang Digunakan dalam Simulasi")
+    st.caption(
+        f"Simulasi ini memakai katalog **{len(songs_df)} lagu** dari "
+        f"**{len(all_genres)} genre**. Setiap lagu sudah diberi 6 ciri numerik (angka 0–1) "
+        "yang menggambarkan karakter musiknya — mirip seperti yang dipakai Spotify sungguhan."
+    )
+
+    with st.expander(f"📋 Buka katalog lengkap ({len(songs_df)} lagu)", expanded=False):
+        df_full = songs_df[["judul", "artis", "genre", "danceability", "energy",
+                            "valence", "acousticness", "tempo", "instrumentalness"]].copy()
+        df_full.columns = ["Judul Lagu", "Artis", "Genre", "Danceability", "Energy",
+                           "Valence", "Acousticness", "Tempo (BPM)", "Instrumentalness"]
+        st.dataframe(
+            df_full,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Danceability":      st.column_config.NumberColumn(format="%.2f"),
+                "Energy":            st.column_config.NumberColumn(format="%.2f"),
+                "Valence":           st.column_config.NumberColumn(format="%.2f"),
+                "Acousticness":      st.column_config.NumberColumn(format="%.2f"),
+                "Tempo (BPM)":       st.column_config.NumberColumn(format="%d"),
+                "Instrumentalness":  st.column_config.NumberColumn(format="%.2f"),
+            },
+        )
+        st.caption(
+            "**Penjelasan kolom (semua skala 0–1, kecuali Tempo):** "
+            "**Danceability** = cocok untuk berdansa • "
+            "**Energy** = tingkat tenaga/intensitas • "
+            "**Valence** = positif (1) vs sedih (0) • "
+            "**Acousticness** = akustik (1) vs elektronik (0) • "
+            "**Tempo** = kecepatan dalam ketukan per menit (BPM) • "
+            "**Instrumentalness** = tanpa vokal (1) vs penuh vokal (0)."
+        )
+
+    st.markdown("---")
 
     # ----- KONTROL: PRESET -----
     st.markdown("### 🎛️ Atur Mood Profile Anda")
@@ -187,9 +232,6 @@ def render():
     user_profile = np.array([f_dance, f_energy, f_valence, f_acoustic, f_tempo, f_instr])
 
     # ----- FILTER GENRE -----
-    songs_df = build_songs_df()
-    all_genres = sorted(songs_df["genre"].unique().tolist())
-
     col_g, col_e = st.columns([1.3, 1])
     with col_g:
         selected_genres = st.multiselect(
@@ -252,13 +294,18 @@ def render():
         df_show.columns = ["Judul", "Artis", "Genre", "Dance", "Energy", "Valence",
                            "Acoustic", "Instr.", "Tempo (BPM)", "Similarity"]
         st.dataframe(
-            df_show.style.format({
-                "Dance": "{:.2f}", "Energy": "{:.2f}", "Valence": "{:.2f}",
-                "Acoustic": "{:.2f}", "Instr.": "{:.2f}",
-                "Tempo (BPM)": "{:.0f}", "Similarity": "{:.3f}",
-            }),
+            df_show,
             use_container_width=True,
             hide_index=True,
+            column_config={
+                "Dance":        st.column_config.NumberColumn(format="%.2f"),
+                "Energy":       st.column_config.NumberColumn(format="%.2f"),
+                "Valence":      st.column_config.NumberColumn(format="%.2f"),
+                "Acoustic":     st.column_config.NumberColumn(format="%.2f"),
+                "Instr.":       st.column_config.NumberColumn(format="%.2f"),
+                "Tempo (BPM)":  st.column_config.NumberColumn(format="%d"),
+                "Similarity":   st.column_config.NumberColumn(format="%.3f"),
+            },
         )
 
     # ----- SCATTER 2D -----
